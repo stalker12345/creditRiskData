@@ -45,6 +45,39 @@ income_max = int(income_range['max'])
 income_default = min(max(50000, income_min), income_max)
 loan_percent_income_max = float(metadata['feature_ranges']['loan_percent_income']['max'])
 
+HOME_OWNERSHIP_LABELS = {
+    "MORTGAGE": "Ипотека",
+    "OTHER": "Другое",
+    "OWN": "Собственное жильё",
+    "RENT": "Аренда",
+}
+
+LOAN_INTENT_LABELS = {
+    "DEBTCONSOLIDATION": "Объединение долгов",
+    "EDUCATION": "Образование",
+    "HOMEIMPROVEMENT": "Ремонт жилья",
+    "MEDICAL": "Медицинские расходы",
+    "PERSONAL": "Личные нужды",
+    "VENTURE": "Бизнес",
+}
+
+LOAN_GRADE_LABELS = {
+    "A": "A - высокая",
+    "B": "B - хорошая",
+    "C": "C - средняя",
+    "D": "D - низкая",
+    "E": "E - очень низкая",
+    "Other": "Другая",
+}
+
+MODEL_TYPE_LABELS = {
+    "GradientBoostingClassifier": "Градиентный бустинг",
+}
+
+
+def display_label(labels, value):
+    return labels.get(value, str(value))
+
 # Заголовок приложения
 st.title("🏦 Система оценки кредитного риска")
 st.markdown("---")
@@ -59,11 +92,11 @@ with st.sidebar:
         st.metric("Точность", f"{metrics['test_accuracy']*100:.1f}%")
         st.metric("ROC-AUC", f"{metrics['test_roc_auc']:.3f}")
     with col2:
-        st.metric("F1-Score", f"{metrics['test_f1']:.3f}")
-        st.metric("Precision", f"{metrics['test_precision']:.3f}")
+        st.metric("F1-мера", f"{metrics['test_f1']:.3f}")
+        st.metric("Точность отказов", f"{metrics['test_precision']:.3f}")
     
     st.markdown("### Важные метрики:")
-    st.info(f"**Recall (Полнота):** {metrics['test_recall']*100:.1f}%\n\n"
+    st.info(f"**Полнота:** {metrics['test_recall']*100:.1f}%\n\n"
             f"Находит {metrics['test_recall']*100:.1f}% всех дефолтов")
     
     st.markdown("### Статистика:")
@@ -121,6 +154,7 @@ with tab1:
             person_home_ownership = st.selectbox(
                 "Статус жилья",
                 options=metadata['person_home_ownership_categories'],
+                format_func=lambda value: display_label(HOME_OWNERSHIP_LABELS, value),
                 help="Тип жилья заёмщика"
             )
             
@@ -183,12 +217,14 @@ with tab1:
             loan_intent = st.selectbox(
                 "Цель кредита",
                 options=metadata['loan_intent_categories'],
+                format_func=lambda value: display_label(LOAN_INTENT_LABELS, value),
                 help="Для чего заёмщик планирует использовать кредит"
             )
             
             loan_grade = st.selectbox(
                 "Оценка кредита",
                 options=metadata['grade_order'],
+                format_func=lambda value: display_label(LOAN_GRADE_LABELS, value),
                 help="Кредитная оценка заёмщика (A - лучшая, E - худшая)"
             )
         
@@ -362,7 +398,7 @@ with tab1:
             if loan_grade in ['D', 'E', 'Other']:
                 risk_factors.append({
                     "factor": "Низкая кредитная оценка",
-                    "value": loan_grade,
+                    "value": display_label(LOAN_GRADE_LABELS, loan_grade),
                     "impact": "⚠️ Повышает риск"
                 })
             
@@ -392,7 +428,7 @@ with tab1:
             if loan_grade in ['A', 'B']:
                 positive_factors.append({
                     "factor": "Высокая кредитная оценка",
-                    "value": loan_grade,
+                    "value": display_label(LOAN_GRADE_LABELS, loan_grade),
                     "impact": "✅ Снижает риск"
                 })
             
@@ -424,12 +460,13 @@ with tab1:
             
             # Дополнительная информация
             with st.expander("📋 Технические детали предсказания"):
+                prediction_label = "Возврат кредита" if result['prediction'] == 0 else "Дефолт"
                 st.json({
-                    "prediction": result['prediction'],
-                    "prediction_class": result['prediction_class'],
-                    "probability_default": round(result['probability_default'], 4),
-                    "probability_non_default": round(result['probability_non_default'], 4),
-                    "risk_level": result['risk_level']
+                    "Решение модели": result['prediction'],
+                    "Класс": prediction_label,
+                    "Вероятность дефолта": round(result['probability_default'], 4),
+                    "Вероятность возврата": round(result['probability_non_default'], 4),
+                    "Уровень риска": result['risk_level']
                 })
         
         except Exception as e:
@@ -449,21 +486,21 @@ with tab2:
     # Метрики в виде карточек
     metric_explanations = [
         {
-            "name": "Accuracy (Точность)",
+            "name": "Доля верных решений",
             "value": f"{metrics['test_accuracy']*100:.1f}%",
             "description": "Показывает, в скольких случаях из 100 модель сделала правильное предсказание.",
             "business_value": "Из 100 кредитных заявок модель правильно оценила 94. Это означает высокую надёжность системы.",
             "icon": "🎯"
         },
         {
-            "name": "Precision (Точность предсказаний)",
+            "name": "Точность предсказанных отказов",
             "value": f"{metrics['test_precision']*100:.1f}%",
             "description": "Когда модель говорит 'отказать', насколько часто она права.",
             "business_value": f"Из всех отказов {metrics['test_precision']*100:.1f}% были правильными. Это значит, что модель редко отказывает хорошим клиентам.",
             "icon": "✅"
         },
         {
-            "name": "Recall (Полнота)",
+            "name": "Полнота поиска дефолтов",
             "value": f"{metrics['test_recall']*100:.1f}%",
             "description": "Из всех реальных дефолтов, сколько модель находит.",
             "business_value": f"Модель находит {metrics['test_recall']*100:.1f}% всех дефолтов. Это критически важно для минимизации потерь банка.",
@@ -477,7 +514,7 @@ with tab2:
             "icon": "📊"
         },
         {
-            "name": "F1-Score",
+            "name": "F1-мера",
             "value": f"{metrics['test_f1']:.3f}",
             "description": "Баланс между точностью и полнотой поиска дефолтов.",
             "business_value": "Хороший баланс между тем, чтобы не пропустить дефолты и не отказать хорошим клиентам.",
@@ -498,7 +535,7 @@ with tab2:
             st.markdown("---")
     
     # Матрица ошибок
-    st.markdown("### 📋 Матрица ошибок (Confusion Matrix)")
+    st.markdown("### 📋 Матрица ошибок")
     
     cm = metrics['confusion_matrix']
     
@@ -630,9 +667,9 @@ with tab3:
     st.markdown("### 📈 Технические характеристики")
     
     tech_info = {
-        "Тип модели": metadata['model_type'],
-        "Обучение": "Gradient Boosting",
-        "Точность (Accuracy)": f"{metrics['test_accuracy']*100:.2f}%",
+        "Тип модели": display_label(MODEL_TYPE_LABELS, metadata['model_type']),
+        "Обучение": "Градиентный бустинг",
+        "Доля верных решений": f"{metrics['test_accuracy']*100:.2f}%",
         "ROC-AUC": f"{metrics['test_roc_auc']:.3f}",
         "Дата создания": "2024"
     }
@@ -653,7 +690,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; color: gray;'>
-        Система оценки кредитного риска | Powered by Machine Learning
+        Система оценки кредитного риска | На базе машинного обучения
     </div>
     """,
     unsafe_allow_html=True
