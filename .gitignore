@@ -31,6 +31,7 @@ ENV/
 *.ipynb_checkpoints
 
 # IDE
+.codex
 .vscode/
 .idea/
 *.swp
@@ -61,4 +62,3 @@ data/*.xlsx
 
 # OS
 Thumbs.db
-
