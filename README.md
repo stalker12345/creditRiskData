@@ -9,6 +9,9 @@
     <a href="https://creditriskdata.streamlit.app/">
       <img src="https://img.shields.io/badge/Live%20Demo-Open%20Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Live Demo">
     </a>
+    <a href="https://github.com/stalker12345/creditRiskData">
+      <img src="https://img.shields.io/badge/GitHub-stalker12345%2FcreditRiskData-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+    </a>
     <img src="https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
     <img src="https://img.shields.io/badge/scikit--learn-Gradient%20Boosting-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" alt="scikit-learn">
   </p>
@@ -104,6 +107,7 @@ CreditRiskData/
 ├── streamlit_model/
 │   ├── model.skops                  # Сохранённая модель
 │   ├── load_model.py                # Загрузка модели и инференс
+│   ├── _loss.py                     # Compatibility shim для внутренних loss-классов
 │   ├── metadata.json                # Метаданные признаков
 │   ├── model_metrics.json           # Метрики качества
 │   ├── example_data.json            # Примеры входных данных

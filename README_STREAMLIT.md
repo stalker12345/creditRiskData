@@ -56,6 +56,7 @@ CreditRiskData/
 │   ├── model_metrics.json         # Метрики качества
 │   ├── lambdas.pkl                # Параметры Box-Cox
 │   ├── load_model.py              # Скрипт загрузки модели
+│   ├── _loss.py                   # Compatibility shim для внутренних loss-классов
 │   └── requirements_streamlit.txt # Зависимости для Streamlit
 ├── data/                          # Исходные данные
 ├── venv/                          # Виртуальное окружение
@@ -120,6 +121,8 @@ CreditRiskData/
 - `lambdas.pkl`
 - `load_model.py`
 
+Если ошибка содержит `No module named '_loss'`, значит приложение запущено на старых файлах. В этой версии в `streamlit_model/_loss.py` добавлен compatibility shim для внутренних классов scikit-learn.
+
 ### Порт уже занят
 
 Если порт 8501 занят, используйте другой порт:
@@ -159,4 +162,3 @@ pip install --upgrade -r streamlit_model/requirements_streamlit.txt
 ## 📝 Лицензия
 
 Этот проект создан в образовательных целях.
-
