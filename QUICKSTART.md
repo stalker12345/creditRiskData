@@ -5,10 +5,17 @@
 ### Вариант 1: Использовать готовый скрипт
 
 ```bash
+cd "/media/user/Programs/C/Курс 4/Диплом/CreditRiskDataOld"
 ./run_streamlit.sh
 ```
 
-### Вариант 2: Ручной запуск
+При первом запуске он сам создаст `venv` и поставит зависимости, если их ещё нет.
+
+### Вариант 2: Запуск по иконке в Linux
+
+Откройте `creditriskdata-local.desktop` в файловом менеджере. Если система попросит разрешение на запуск, подтвердите его.
+
+### Вариант 3: Ручной запуск
 
 ```bash
 # 1. Активировать виртуальное окружение
@@ -18,7 +25,7 @@ source venv/bin/activate
 pip install -r streamlit_model/requirements_streamlit.txt
 
 # 3. Запустить приложение
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
 ## 🌐 Доступ к приложению
@@ -65,4 +72,3 @@ pip install --upgrade -r streamlit_model/requirements_streamlit.txt
 ## 📞 Нужна помощь?
 
 Смотрите полную документацию в `README_STREAMLIT.md`
-

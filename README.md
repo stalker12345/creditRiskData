@@ -96,8 +96,15 @@ streamlit run app.py
 ### Запуск через готовый скрипт
 
 ```bash
+cd "/media/user/Programs/C/Курс 4/Диплом/CreditRiskDataOld"
 ./run_streamlit.sh
 ```
+
+Скрипт сам создаст `venv` и установит зависимости при первом запуске, если это ещё не сделано.
+
+### Запуск по иконке в Linux
+
+Откройте файл `creditriskdata-local.desktop` в файловом менеджере или вынесите его на рабочий стол. Он запустит локальный Streamlit-сервер через `run_streamlit.sh`.
 
 ## Структура проекта
 
@@ -113,6 +120,7 @@ CreditRiskData/
 │   ├── example_data.json            # Примеры входных данных
 │   ├── lambdas.pkl                  # Параметры Box-Cox
 │   └── requirements_streamlit.txt   # Зависимости для Streamlit
+├── creditriskdata-local.desktop      # Linux-ярлык для запуска приложения
 ├── сreditRiskDataset.ipynb          # Исследование, обучение и экспорт артефактов
 ├── QUICKSTART.md                    # Короткая инструкция по запуску
 ├── README_STREAMLIT.md              # Расширенное описание интерфейса

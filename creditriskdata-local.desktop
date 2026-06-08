@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=CreditRiskData Local
+Comment=Запуск локального Streamlit-приложения
+Terminal=true
+Exec=/bin/bash -lc "cd '/media/user/Programs/C/Курс 4/Диплом/CreditRiskDataOld' && ./run_streamlit.sh"
+Path=/media/user/Programs/C/Курс 4/Диплом/CreditRiskDataOld
+Categories=Development;
+StartupNotify=true
