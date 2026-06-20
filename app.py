@@ -534,7 +534,7 @@ with tab2:
                 st.info(f"**Для бизнеса:** {metric['business_value']}")
             st.markdown("---")
 
-    with st.expander("🧮 Формулы расчета метрик"):
+    with st.expander("🧮 Формулы расчета метрик", expanded=True):
         st.markdown("""
         В формулах используются обозначения из матрицы ошибок:
 
