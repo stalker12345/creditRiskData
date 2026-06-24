@@ -70,15 +70,38 @@ LOAN_GRADE_LABELS = {
     "Other": "Другая",
 }
 
+LOAN_GRADE_ORDER = ["A", "B", "C", "D", "E", "Other"]
+
 HOME_OWNERSHIP_OTHER_EXPLANATION = (
     "`Другое` означает статус жилья, который не относится к ипотеке, "
     "собственному жилью или аренде."
 )
 
-LOAN_GRADE_OTHER_EXPLANATION = (
-    "`Другая` означает объединённую категорию кредитных оценок F и G, "
-    "которые встречались редко и были сгруппированы при подготовке данных."
+LOAN_GRADE_AUTO_EXPLANATION = (
+    "Кредитный рейтинг заявки не нужно выбирать вручную. В демо-версии "
+    "приложение рассчитывает его автоматически при отправке формы: основой "
+    "служит процентная ставка, а корректировки зависят от доли дохода на "
+    "кредит, прошлых дефолтов и стажа работы. В реальной банковской системе "
+    "это правило нужно заменить на официальный внутренний рейтинг или "
+    "переобучить модель без признака `loan_grade`."
 )
+
+LOAN_GRADE_RULE_DETAILS = """
+**Базовый рейтинг по процентной ставке:**
+- до 8% включительно — A
+- 8.1–11% — B
+- 11.1–14% — C
+- 14.1–17% — D
+- 17.1–21% — E
+- выше 21% — Другая
+
+**Корректировки:**
+- доля дохода на кредит от 40% — рейтинг ухудшается на 1 ступень
+- доля дохода на кредит до 20% — рейтинг улучшается на 1 ступень
+- есть прошлые дефолты — рейтинг ухудшается на 1 ступень
+- стаж меньше 1 года — рейтинг ухудшается на 1 ступень
+- стаж от 5 лет — рейтинг улучшается на 1 ступень
+"""
 
 MODEL_TYPE_LABELS = {
     "GradientBoostingClassifier": "Градиентный бустинг",
@@ -87,6 +110,38 @@ MODEL_TYPE_LABELS = {
 
 def display_label(labels, value):
     return labels.get(value, str(value))
+
+
+def estimate_loan_grade(loan_int_rate, loan_percent_income, has_previous_default, person_emp_length):
+    """Оценивает loan_grade для демо-сценария, когда внешнего рейтинга нет."""
+    if loan_int_rate <= 8:
+        grade_index = 0
+    elif loan_int_rate <= 11:
+        grade_index = 1
+    elif loan_int_rate <= 14:
+        grade_index = 2
+    elif loan_int_rate <= 17:
+        grade_index = 3
+    elif loan_int_rate <= 21:
+        grade_index = 4
+    else:
+        grade_index = 5
+
+    if loan_percent_income >= 0.4:
+        grade_index += 1
+    elif loan_percent_income <= 0.2:
+        grade_index -= 1
+
+    if has_previous_default:
+        grade_index += 1
+
+    if person_emp_length < 1:
+        grade_index += 1
+    elif person_emp_length >= 5:
+        grade_index -= 1
+
+    grade_index = max(0, min(grade_index, len(LOAN_GRADE_ORDER) - 1))
+    return LOAN_GRADE_ORDER[grade_index]
 
 # Заголовок приложения
 st.title("🏦 Система оценки кредитного риска")
@@ -235,16 +290,9 @@ with tab1:
                 help="Для чего заёмщик планирует использовать кредит"
             )
             
-            loan_grade = st.selectbox(
-                "Оценка кредита",
-                options=metadata['grade_order'],
-                format_func=lambda value: display_label(LOAN_GRADE_LABELS, value),
-                help=(
-                    "Кредитная оценка заёмщика: A — лучшая, E — очень низкая. "
-                    "Другая — объединённые оценки F и G."
-                )
-            )
-            st.caption(LOAN_GRADE_OTHER_EXPLANATION)
+            st.info(LOAN_GRADE_AUTO_EXPLANATION)
+            with st.expander("Как рассчитывается кредитный рейтинг"):
+                st.markdown(LOAN_GRADE_RULE_DETAILS)
         
         # Кнопка предсказания
         submitted = st.form_submit_button("🔍 Оценить риск", use_container_width=True)
@@ -253,6 +301,12 @@ with tab1:
     if submitted:
         # Подготовка данных
         cb_default = 1 if cb_person_default_on_file == "Да" else 0
+        loan_grade = estimate_loan_grade(
+            loan_int_rate=loan_int_rate,
+            loan_percent_income=loan_percent_income,
+            has_previous_default=cb_default == 1,
+            person_emp_length=person_emp_length,
+        )
         
         user_data = {
             "person_age": float(person_age),
@@ -275,6 +329,10 @@ with tab1:
             # Результаты
             st.markdown("---")
             st.header("📊 Результаты оценки")
+            st.info(
+                "Автоматически рассчитанный кредитный рейтинг заявки: "
+                f"**{display_label(LOAN_GRADE_LABELS, loan_grade)}**"
+            )
             
             # Основные метрики
             col1, col2, col3 = st.columns(3)
@@ -415,7 +473,7 @@ with tab1:
             
             if loan_grade in ['D', 'E', 'Other']:
                 risk_factors.append({
-                    "factor": "Низкая кредитная оценка",
+                    "factor": "Низкий кредитный рейтинг заявки",
                     "value": display_label(LOAN_GRADE_LABELS, loan_grade),
                     "impact": "⚠️ Повышает риск"
                 })
@@ -445,7 +503,7 @@ with tab1:
             
             if loan_grade in ['A', 'B']:
                 positive_factors.append({
-                    "factor": "Высокая кредитная оценка",
+                    "factor": "Высокий кредитный рейтинг заявки",
                     "value": display_label(LOAN_GRADE_LABELS, loan_grade),
                     "impact": "✅ Снижает риск"
                 })
@@ -672,8 +730,25 @@ with tab3:
         - Процентная ставка
         - Доля дохода на кредит
         - Цель кредита
-        - Кредитная оценка
+        - Кредитный рейтинг заявки
         """)
+
+    st.markdown("### 🏷️ Что такое кредитный рейтинг заявки?")
+    st.info("""
+    `Кредитный рейтинг заявки` (`loan_grade`) — это входной признак из исходного
+    набора данных. Его обычно присваивает кредитор или скоринговая система до
+    финального решения по заявке. Это не субъективная оценка сотрудника и не
+    результат работы этой модели.
+
+    Чтобы не заставлять пользователя выбирать этот рейтинг вручную, приложение
+    рассчитывает его автоматически при отправке формы. Демо-правило использует
+    процентную ставку как основной сигнал и корректирует рейтинг по доле дохода
+    на кредит, прошлым дефолтам и стажу работы. В production-сценарии это нужно
+    заменить на официальный внутренний рейтинг банка или переобучить модель без
+    признака `loan_grade`.
+    """)
+    with st.expander("Правило расчёта рейтинга в демо-версии"):
+        st.markdown(LOAN_GRADE_RULE_DETAILS)
     
     st.markdown("---")
     
