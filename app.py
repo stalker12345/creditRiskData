@@ -70,6 +70,16 @@ LOAN_GRADE_LABELS = {
     "Other": "Другая",
 }
 
+HOME_OWNERSHIP_OTHER_EXPLANATION = (
+    "`Другое` означает статус жилья, который не относится к ипотеке, "
+    "собственному жилью или аренде."
+)
+
+LOAN_GRADE_OTHER_EXPLANATION = (
+    "`Другая` означает объединённую категорию кредитных оценок F и G, "
+    "которые встречались редко и были сгруппированы при подготовке данных."
+)
+
 MODEL_TYPE_LABELS = {
     "GradientBoostingClassifier": "Градиентный бустинг",
 }
@@ -155,8 +165,12 @@ with tab1:
                 "Статус жилья",
                 options=metadata['person_home_ownership_categories'],
                 format_func=lambda value: display_label(HOME_OWNERSHIP_LABELS, value),
-                help="Тип жилья заёмщика"
+                help=(
+                    "Тип жилья заёмщика. "
+                    "Другое — статус жилья вне категорий ипотека, собственное жильё и аренда."
+                )
             )
+            st.caption(HOME_OWNERSHIP_OTHER_EXPLANATION)
             
             person_emp_length = st.slider(
                 "Опыт работы (лет)",
@@ -225,8 +239,12 @@ with tab1:
                 "Оценка кредита",
                 options=metadata['grade_order'],
                 format_func=lambda value: display_label(LOAN_GRADE_LABELS, value),
-                help="Кредитная оценка заёмщика (A - лучшая, E - худшая)"
+                help=(
+                    "Кредитная оценка заёмщика: A — лучшая, E — очень низкая. "
+                    "Другая — объединённые оценки F и G."
+                )
             )
+            st.caption(LOAN_GRADE_OTHER_EXPLANATION)
         
         # Кнопка предсказания
         submitted = st.form_submit_button("🔍 Оценить риск", use_container_width=True)
